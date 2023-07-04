@@ -58,7 +58,7 @@ get_column_info <- function(df) {
     stop("Package 'DBI' needed for this function to work. Please install it.", 
          call. = FALSE)
   }
-  
+
   column_info <- DBI::dbColumnInfo(res)
   DBI::dbClearResult(res)
   
@@ -74,8 +74,7 @@ get_column_info <- function(df) {
 #' @details The scope of data quality diagnosis is information on missing values
 #' and unique value information. Data quality diagnosis can determine variables
 #' that require missing value processing. Also, the unique value information can
-#' determine the variable to be removed from the data analysis. 
-#' You can use grouped_df as the group_by() function.
+#' determine the variable to be removed from the data analysis.
 #'
 #' @section Diagnostic information:
 #' The information derived from the data diagnosis is as follows.:
@@ -156,107 +155,57 @@ get_column_info <- function(df) {
 #'   diagnose() %>%
 #'   filter(missing_count > 0)
 #'   
-#' # Using pipes & dplyr -------------------------
-#' # Diagnosis of missing variables
-#' con_sqlite %>% 
-#'   tbl("TB_JOBCHANGE") %>% 
-#'   group_by(job_chnge) %>% 
-#'   diagnose()
-#'   
 #' # Disconnect DBMS   
 #' DBI::dbDisconnect(con_sqlite)
 #' }
 #'    
-diagnose.tbl_dbi <- function(.data, ..., in_database = TRUE, 
-                             collect_size = Inf) {
+diagnose.tbl_dbi <- function(.data, ..., in_database = TRUE, collect_size = Inf) {
   vars <- tidyselect::vars_select(colnames(.data), !!! rlang::quos(...))
   
   if (in_database) {
-    if (!is_grouped(.data)) {  
-      diagn_std_impl_dbi(.data, vars)
-    } else {
-      diagn_group_impl_dbi(.data, vars)      
-    }  
+    diagn_std_impl_dbi(.data, vars)
   } else {
-    if (!is_grouped(.data)) {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagn_std_impl(vars)
-    } else {
-      .data %>%
-        dplyr::collect(n = collect_size) %>%
-        diagnose_group_impl(vars)
-    }    
+    .data %>% 
+      dplyr::collect(n = collect_size) %>% 
+      diagn_std_impl(vars)
   }
 }
 
 diagn_std_impl_dbi <- function(df, vars) {
   if (length(vars) == 0) vars <- colnames(df)
   
+  get_na_cnt <- function(df, x) {
+    suppressWarnings(df %>%
+                       select(variable = !!x) %>%
+                       summarise(missing_count = sum(ifelse(is.na(variable), 1, 0))) %>%
+                       pull())
+  }
+  
+  get_unique_cnt <- function(df, x) {
+    df %>%
+      select(variable = !!x) %>%
+      distinct(variable) %>%
+      summarise(unique_count = n()) %>%
+      pull()
+  }
   
   col_info <- df %>%
     get_column_info %>%
     filter(.[, 1] %in% vars) %>% 
     select(variables = 1, types = 2)
   
-  tabs <- vars %>% 
-    purrr::map_df(
-      function(x) {
-        suppressMessages(
-          df %>% 
-            select(variable = !!x) %>%
-            summarise(missing_count = sum(ifelse(is.na(variable), 1, 0), na.rm = TRUE),
-                      missing_percent = sum(ifelse(is.na(variable), 1, 0), na.rm = TRUE) / n() * 100,
-                      unique_count = n_distinct(variable),
-                      unique_rate = n_distinct(variable) * 1.0 / n()) %>% 
-            mutate(variables = x) %>% 
-            collect()      
-        )
-      }
-    )
+  missing_count <- sapply(vars,
+                          function(x) get_na_cnt(df, x))
+  unique_count <- sapply(vars,
+                         function(x) get_unique_cnt(df, x))
+  data_count <- tally(df) %>%
+    pull
   
-  col_info %>% 
-    right_join(
-      tabs,
-      by = "variables") %>% 
-    tibble::as_tibble()
-}
-
-#' @importFrom purrr map_df
-#' @importFrom tidyselect matches
-#' @importFrom tibble as_tibble
-diagn_group_impl_dbi <- function(df, vars) {
-  if (length(vars) == 0) vars <- colnames(df)
-  
-  col_info <- df %>%
-    get_column_info %>%
-    filter(.[, 1] %in% vars) %>% 
-    select(variables = 1, types = 2)
-  
-  tabs <- vars %>% 
-    purrr::map_df(
-      function(x) {
-        suppressMessages(
-          df %>% 
-            group_by_at(df$lazy_query$group_vars) %>% 
-            select(variable = !!x) %>%
-            summarise(data_count = n(),
-                      missing_count = sum(ifelse(is.na(variable), 1, 0), na.rm = TRUE),
-                      missing_percent = sum(ifelse(is.na(variable), 1, 0), na.rm = TRUE) / n() * 100,
-                      unique_count = n_distinct(variable),
-                      unique_rate = n_distinct(variable) * 1.0 / n()) %>% 
-            mutate(variables = x) %>% 
-            collect() %>% 
-            select(!tidyselect::matches("^variable$"))          
-        )
-      }
-    )
-  
-  col_info %>% 
-    right_join(
-      tabs,
-      by = "variables") %>% 
-    tibble::as_tibble()
+  as_tibble(cbind(col_info,
+                  tibble(missing_count = missing_count,
+                         missing_percent = missing_count / data_count * 100,
+                         unique_count = unique_count,
+                         unique_rate = unique_count / data_count))) 
 }
 
 
@@ -271,8 +220,7 @@ diagn_group_impl_dbi <- function(df, vars) {
 #' then the removal of this variable in the forecast model will have to be
 #' considered. Also, if the occupancy of all levels is close to 0%, this
 #' variable is likely to be an identifier.
-#' You can use grouped_df as the group_by() function.
-#' 
+#'
 #' @section Categorical diagnostic information:
 #' The information derived from the categorical data diagnosis is as follows.
 #'
@@ -312,9 +260,7 @@ diagn_group_impl_dbi <- function(df, vars) {
 #' Applies only if in_database = FALSE.
 #' 
 #' @return an object of tbl_df.
-#' @seealso \code{\link{diagnose_category.data.frame}}, \code{\link{diagnose.tbl_dbi}}, 
-#' \code{\link{diagnose_category.tbl_dbi}}, \code{\link{diagnose_numeric.tbl_dbi}}, 
-#' \code{\link{diagnose_outlier.tbl_dbi}}.
+#' @seealso \code{\link{diagnose_category.data.frame}}, \code{\link{diagnose.tbl_dbi}}, \code{\link{diagnose_category.tbl_dbi}}, \code{\link{diagnose_numeric.tbl_dbi}}, \code{\link{diagnose_outlier.tbl_dbi}}.
 #' @export
 #' @examples
 #' \donttest{
@@ -364,12 +310,6 @@ diagn_group_impl_dbi <- function(df, vars) {
 #'   diagnose_category()  %>%
 #'   filter(ratio >= 60)
 #'   
-#' # Using group_by() ---------------------------- 
-#' con_sqlite %>% 
-#'   tbl("TB_JOBCHANGE") %>% 
-#'   group_by(job_chnge) %>% 
-#'   diagnose_category(company_type) 
-#'   
 #' # Using type argument -------------------------
 #'  dfm <- data.frame(alpabet = c(rep(letters[1:5], times = 5), "c")) 
 #'  
@@ -407,21 +347,11 @@ diagnose_category.tbl_dbi <- function(.data, ..., top = 10, type = c("rank", "n"
   vars <- tidyselect::vars_select(colnames(.data), !!! rlang::quos(...))
   
   if (in_database) {
-    if (!is_grouped(.data)) {  
-      diagn_category_impl_dbi(.data, vars, top, type)
-    } else {
-      diagn_category_group_impl_dbi(.data, vars, top, type)      
-    }      
+    diagn_category_impl_dbi(.data, vars, top, type)
   } else {
-    if (!is_grouped(.data)) {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagn_category_impl(vars, top, type, add_character = TRUE, add_date = TRUE)
-    } else {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagnose_category_group_impl(vars, top, type, add_character = TRUE, add_date = TRUE)
-    }      
+    .data %>% 
+      dplyr::collect(n = collect_size) %>% 
+      diagn_category_impl(vars, top, type, add_character = TRUE, add_date = TRUE)
   }
 }
 
@@ -441,89 +371,35 @@ diagn_category_impl_dbi <- function(df, vars, top, type) {
   
   idx_factor <- which(col_type == "character")
   
-  if (length(idx_factor) == 0) {
-    message("There is no categorical variable in the data or variable list.\n")
-    return(NULL)
-  }
+  N <- tally(df) %>% 
+    pull
   
-  vars[idx_factor] %>% 
-    purrr::map_df(
-      function(x) {
-        suppressMessages(
-          tab <- df %>% 
-            select(variable = x) %>%
-            count(variable, sort = TRUE) %>% 
-            collect() %>%           
-            transmute(variables = x, levels = variable, N = sum(n), freq = n,
-                      ratio = n / sum(n) * 100, 
-                      rank = rank(max(freq) - freq, ties.method = "min"))
-        )  
-        
-        if (type == "n") {
-          tab %>% 
-            slice_head(n = top)
-        } else if (type == "rank") {
-          tab %>% 
-            top_n(n = top, freq)      
-        }   
+  get_topn <- function(df, var, top, type) {
+    suppressMessages({
+      tab <- df %>%
+        select(levels = var) %>%
+        group_by(levels) %>% 
+        tally %>% 
+        arrange(desc(n)) %>% 
+        as_tibble %>% 
+        cbind(var, .) %>% 
+        transmute(variables = var, levels, N, freq = n,
+                  ratio = n / N * 100, 
+                  rank = rank(max(freq) - freq, ties.method = "min"))
+      
+      if (type == "n") {
+        tab %>% 
+          slice_head(n = top)
+      } else if (type == "rank") {
+        tab %>% 
+          top_n(n = top, freq)      
       }
-    ) 
-}
-
-diagn_category_group_impl_dbi <- function(df, vars, top, type) {
-  if (length(vars) == 0) vars <- colnames(df)
-  
-  if (length(type) != 1 | !type %in% c("rank", "n")) {
-    message("The type argument must be one of \"rank\" or \"n\".\n")
-    return(NULL)    
+    })
   }
   
-  col_info <- df %>%
-    get_column_info %>%
-    filter(.[, 1] %in% vars) %>% 
-    select(variables = 1, types = 2)
-  
-  idx_factor <- which(col_info$types %in% "character")
-  
-  if (length(idx_factor) == 0) {
-    message("There is no categorical variable in the data or variable list.\n")
-    return(NULL)
-  }
-  
-  tabs <- vars[idx_factor] %>% 
-    purrr::map_df(
-      function(x) {
-        suppressMessages(
-          tab <- df %>% 
-            group_by_at(df$lazy_query$group_vars) %>% 
-            select(variable = !!x) %>%
-            count(variable, sort = TRUE) %>% 
-            collect() %>% 
-            transmute(variables = x, levels = variable, N = sum(n), freq = n,
-                      ratio = n / sum(n) * 100, 
-                      rank = rank(max(freq) - freq, ties.method = "min"))
-        )  
-        
-        tab <- tab[, c("variables", setdiff(names(tab), "variables"))]
-        
-        if (type == "n") {
-          tab %>% 
-            slice_head(n = top)
-        } else if (type == "rank") {
-          tab %>% 
-            top_n(n = top, freq)      
-        }   
-      }
-    ) 
-  
-  col_info %>% 
-    filter(types %in% "character") %>% 
-    select(1) %>% 
-    right_join(
-      tabs %>% 
-        arrange_at(c("variables", df$lazy_query$group_vars, "rank")),
-      by = "variables") %>% 
-    tibble::as_tibble() 
+  result <- lapply(vars[idx_factor],
+                   function(x) get_topn(df, x, top, type))
+  as_tibble(do.call("rbind", result))
 }
 
 
@@ -539,8 +415,7 @@ diagn_category_group_impl_dbi <- function(df, vars, top, type) {
 #' of data. If the number of zero or minus is large, it is necessary to suspect
 #' the error of the data. If the number of outliers is large, a strategy of
 #' eliminating or replacing outliers is needed.
-#' You can use grouped_df as the group_by() function.
-#' 
+#'
 #' @section Numerical diagnostic information:
 #' The information derived from the numerical data diagnosis is as follows.
 #'
@@ -619,12 +494,6 @@ diagn_category_group_impl_dbi <- function(df, vars, top, type) {
 #'   diagnose_numeric()  %>%
 #'   filter(outlier > 0)
 #'
-#' # Using group_by() ---------------------------- 
-#' con_sqlite %>% 
-#'   tbl("TB_HEARTFAILURE") %>% 
-#'   group_by(death_event) %>% 
-#'   diagnose_numeric() 
-#'   
 #' # Disconnect DBMS   
 #' DBI::dbDisconnect(con_sqlite)
 #' }
@@ -635,15 +504,9 @@ diagnose_numeric.tbl_dbi <- function(.data, ..., in_database = FALSE, collect_si
   if (in_database) {
     stop("It does not yet support in-database mode. Use in_database = FALSE.")
   } else {
-    if (!is_grouped(.data)) {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagn_numeric_impl(vars)
-    } else {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagnose_numeric_group_impl(vars)
-    }     
+    .data %>% 
+      dplyr::collect(n = collect_size) %>% 
+      diagn_numeric_impl(vars)
   }
 }
 
@@ -658,8 +521,7 @@ diagnose_numeric.tbl_dbi <- function(.data, ..., in_database = FALSE, collect_si
 #' If the number of outliers is small and the difference between the averages
 #' including outliers and the averages not including them is large,
 #' it is necessary to eliminate or replace the outliers.
-#' You can use grouped_df as the group_by() function.
-#' 
+#'
 #' @section Outlier Diagnostic information:
 #' The information derived from the numerical data diagnosis is as follows.
 #'
@@ -735,12 +597,6 @@ diagnose_numeric.tbl_dbi <- function(.data, ..., in_database = FALSE, collect_si
 #'   diagnose_outlier()  %>%
 #'   filter(outliers_ratio > 1)
 #'
-#' # Using group_by() ----------------------------
-#' con_sqlite %>% 
-#'   tbl("TB_HEARTFAILURE") %>% 
-#'   group_by(death_event) %>% 
-#'   diagnose_outlier() 
-#'   
 #' # Disconnect DBMS   
 #' DBI::dbDisconnect(con_sqlite)
 #' }
@@ -751,15 +607,9 @@ diagnose_outlier.tbl_dbi <- function(.data, ..., in_database = FALSE, collect_si
   if (in_database) {
     stop("It does not yet support in-database mode. Use dbi = FALSE.")
   } else {
-    if (!is_grouped(.data)) {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagnose_outlier_impl(vars)
-    } else {
-      .data %>% 
-        dplyr::collect(n = collect_size) %>% 
-        diagnose_outlier_group_impl(vars)
-    }      
+    .data %>% 
+      dplyr::collect(n = collect_size) %>%
+      diagnose_outlier_impl(vars)
   }
 }
 

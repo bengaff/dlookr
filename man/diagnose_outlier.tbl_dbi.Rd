@@ -38,7 +38,6 @@ The scope of the diagnosis is the provide a outlier information.
 If the number of outliers is small and the difference between the averages
 including outliers and the averages not including them is large,
 it is necessary to eliminate or replace the outliers.
-You can use grouped_df as the group_by() function.
 }
 \section{Outlier Diagnostic information}{
 
@@ -99,12 +98,6 @@ con_sqlite \%>\%
   diagnose_outlier()  \%>\%
   filter(outliers_ratio > 1)
 
-# Using group_by() ----------------------------
-con_sqlite \%>\% 
-  tbl("TB_HEARTFAILURE") \%>\% 
-  group_by(death_event) \%>\% 
-  diagnose_outlier() 
-  
 # Disconnect DBMS   
 DBI::dbDisconnect(con_sqlite)
 }
