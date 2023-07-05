@@ -421,7 +421,7 @@ get_percentile <- function(x, value, from = 0, to = 1, eps = 1e-06) {
   coef <- 1.5
   
   breaks <- seq(from, to, length.out = N)
-  percentile <- quantile(x, probs = breaks)
+  percentile <- quantile(x, probs = breaks, na.rm = TRUE)
   
   iqr <- diff(percentile[c(2, 4)])
   outlier <- as.logical(value < (percentile[2L] - coef * iqr) | value > (percentile[4L] + coef * iqr))
