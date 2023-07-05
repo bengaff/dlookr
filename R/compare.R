@@ -351,6 +351,14 @@ compare_numeric_impl <- function(df, vars) {
   x <- combination[, 1]
   y <- combination[, 2]
   
+  # Check that >0 non-NA variables in x and y
+  if (sum(! is.na(x)) < 1) {
+    stop("There are no non-NA values in x.")
+  }
+  if (sum(! is.na(y)) < 1) {
+    stop("There are no non-NA values in y.")
+  }
+  
   cor_mat <- df %>% 
     cor(use = "pairwise.complete.obs")
   
