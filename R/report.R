@@ -149,8 +149,9 @@ diagnose_web_report.data.frame <- function(
   if (length(var_descs) != length(names(.data))) {
     stop("var_descs must be the same length as the number of variables in the data.")
   }
-  varDescClean <- names(.data) %>% 
-    setNames(var_descs)
+  varDescsDat <- tibble(
+    variables = names(.data), 
+    varDesc = var_descs)
   
   assign("reportData", as.data.frame(.data), .dlookrEnv)
   assign("var_descs", varDescClean, .dlookrEnv)  

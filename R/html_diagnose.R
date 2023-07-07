@@ -188,9 +188,12 @@ html_paged_toprank <- function(.data, top = 10, type = "n", variable = NULL,
 #' @import dplyr
 #' @import ggplot2
 #' @import reactable
-html_variable <- function(.data, var_descs = names(.data),
-                          thres_uniq_cat = 0.5, thres_uniq_num = 5,
-                          theme = c("orange", "blue")[1], base_family = NULL) {
+html_variable <- function(
+    .data, var_descs = tibble(
+      variables = names(.data), 
+      varDesc = names(.data)),
+    thres_uniq_cat = 0.5, thres_uniq_num = 5,
+    theme = c("orange", "blue")[1], base_family = NULL) {
   style <- ifelse(theme == "orange", "color: rgb(255, 127, 42)", 
                   "color: rgb(0, 114, 188)")
   
@@ -261,8 +264,9 @@ html_variable <- function(.data, var_descs = names(.data),
   # Update variables field to include Description for tooltip 
   # (and keep copy of tabs$variables)
   tabsVarsClean <- tabs$variables
-  varDescUsed <- names(var_descs[na.omit(match(var_descs, tabsVarsClean))])
-  tabs$variables <- paste0(tabs$variables, "|", varDescUsed)
+  tabs <- tabs %>% 
+    left_join(var_descs, by = "variables") %>%
+    mutate(variables = paste0(variables, "|", varDesc))
   
   reactable(
     tabs,
@@ -518,15 +522,18 @@ html_paged_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
 #' @import dplyr
 #' @import htmltools
 #' @import reactable
-html_missing <- function(tab, var_descs = names(.data),
-                         grade = c("Good" = 0.05, "OK" = 0.1, 
-                                   "NotBad" = 0.2, "Bad" = 0.5, 
-                                   "Remove" = 1),
-                         recommend = c("Delete or Imputation", 
-                                       "Delete or Imputation",
-                                       "Model based Imputation", 
-                                       "Model based Imputation", 
-                                       "Remove Variable")) {
+html_missing <- function(
+    tab, var_descs = tibble(
+      variables = names(.data), 
+      varDesc = names(.data)),
+    grade = c("Good" = 0.05, "OK" = 0.1, 
+              "NotBad" = 0.2, "Bad" = 0.5, 
+              "Remove" = 1),
+    recommend = c("Delete or Imputation", 
+                  "Delete or Imputation",
+                  "Model based Imputation", 
+                  "Model based Imputation", 
+                  "Remove Variable")) {
   diagn_missing <- tab %>%
     filter(missing_count > 0) %>% 
     select(variables, missing_count, missing_percent) %>% 
@@ -555,8 +562,8 @@ html_missing <- function(tab, var_descs = names(.data),
     # Update variables field to include Description for tooltip 
     # (and keep copy of diagn_missing$variables)
     varsClean <- diagn_missing$variables
-    varDescUsed <- names(var_descs[na.omit(match(var_descs, varsClean))])
-    diagn_missing$variables <- paste0(diagn_missing$variables, "|", varDescUsed)
+    diagn_missing <- diagn_missing %>% 
+      left_join(var_descs, by = "variables") %>%
     
     # c("#D9EF8B", "#FEE08B", "#FDAE61", "#F46D43", "#D73027")  
     reactable(
