@@ -64,3 +64,16 @@ plot_message <- function(msg = NULL, cex = 1) {
   graphics::text(x = 2, y = 2, msg, cex = cex)
 }
 
+#' Create customised tooltip using text that has a | delimiter 
+#' @importFrom tippy tippy
+with_tooltip <- function(value, ...) {
+  # Strip valueText and tooltipText from value
+  valueText <- strsplit(value, split = "\\|")[[1]][1]
+  tooltipText <- strsplit(value, split = "\\|")[[1]][2]
+  
+  div(style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
+      tippy::tippy(valueText, tooltipText, placement = "right",
+                   theme = "light", ...))
+}
+
+

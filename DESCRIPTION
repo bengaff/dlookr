@@ -38,6 +38,7 @@ Imports:
     partykit,
     purrr,
     reactable,
+    tippy,
     rlang,
     rmarkdown,
     shiny,

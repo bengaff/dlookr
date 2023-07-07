@@ -27,6 +27,7 @@ library(htmltools)
 
 ```{r get-parameters}
 reportData <- get("reportData", .dlookrEnv)
+var_descs <- get("var_descs", .dlookrEnv)
 sample_percent <- get("sample_percent", .dlookrEnv)
 author <- get("author", .dlookrEnv)
 thres_uniq_cat <- get("thres_uniq_cat", .dlookrEnv)
@@ -539,7 +540,8 @@ h2("Variables", id = "ID-h2-variables", class = "title-h2")
 cap <- "Diagnostic overview of individual variables"
 html_cat(cap)
 
-html_variable(reportData, theme = "$theme$", base_family = base_family)
+html_variable(reportData, var_descs = var_descs,
+              theme = "$theme$", base_family = base_family)
 
 break_line_asis(2)
 ```

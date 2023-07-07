@@ -188,7 +188,8 @@ html_paged_toprank <- function(.data, top = 10, type = "n", variable = NULL,
 #' @import dplyr
 #' @import ggplot2
 #' @import reactable
-html_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
+html_variable <- function(.data, var_descs = names(.data),
+                          thres_uniq_cat = 0.5, thres_uniq_num = 5,
                           theme = c("orange", "blue")[1], base_family = NULL) {
   style <- ifelse(theme == "orange", "color: rgb(255, 127, 42)", 
                   "color: rgb(0, 114, 188)")
@@ -239,6 +240,10 @@ html_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
              outlier_count = NA)
   }
   
+  # Update variables field to include Description for tooltip
+  raws$variables <- paste0(raws$variables, "|", var_descs)
+  
+  # Create tabs data
   tabs <- raws %>% 
     mutate(missing = ifelse(missing_count > 0, 1, 0)) %>% 
     mutate(cardinality = ifelse(types %in% c("character", "factor", "ordered", 
@@ -264,7 +269,7 @@ html_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
     filterable = TRUE,
     columns = list(
       variables = colDef(
-      #   cell = function(value) a(name = value, value)
+        cell = function(value) with_tooltip(value),
         name = "Variables",
         #width = 250
       ),

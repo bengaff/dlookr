@@ -76,6 +76,7 @@ eda_paged_report <- function(.data, ...) {
 #' @seealso \code{\link{diagnose_web_report.tbl_dbi}}.
 #'
 #' @param .data a data.frame or a \code{\link{tbl_df}}.
+#' @param var_descs a \code{vector} where the values are the column names in \code{.data} and the names are the descriptions for the columns.
 #' @param output_file name of generated file. default is NULL.
 #' @param output_dir name of directory to generate report file. default is tempdir().
 #' @param browse logical. choose whether to output the report results to the browser.
@@ -127,15 +128,18 @@ eda_paged_report <- function(.data, ...) {
 #' @importFrom knitr image_uri
 #' @method diagnose_web_report data.frame
 #' @export
-diagnose_web_report.data.frame <- function(.data, output_file = NULL, output_dir = tempdir(),   
-                            browse = TRUE, title = "Data Diagnosis",
-                            subtitle = deparse(substitute(.data)), author = "dlookr",
-                            title_color = "gray", thres_uniq_cat = 0.5, 
-                            thres_uniq_num = 5, logo_img = NULL, 
-                            create_date = Sys.time(),
-                            theme = c("orange", "blue"), 
-                            sample_percent = 100, is_tbl_dbi = FALSE, 
-                            base_family = NULL, ...) {
+diagnose_web_report.data.frame <- function(
+    .data, 
+    var_descs = names(.data),
+    output_file = NULL, output_dir = tempdir(),   
+    browse = TRUE, title = "Data Diagnosis",
+    subtitle = deparse(substitute(.data)), author = "dlookr",
+    title_color = "gray", thres_uniq_cat = 0.5, 
+    thres_uniq_num = 5, logo_img = NULL, 
+    create_date = Sys.time(),
+    theme = c("orange", "blue"), 
+    sample_percent = 100, is_tbl_dbi = FALSE, 
+    base_family = NULL, ...) {
   theme <- match.arg(theme)
   
   if (sample_percent > 100 | sample_percent <= 0) {
@@ -143,6 +147,7 @@ diagnose_web_report.data.frame <- function(.data, output_file = NULL, output_dir
   }
   
   assign("reportData", as.data.frame(.data), .dlookrEnv)
+  assign("var_descs", var_descs, .dlookrEnv)  
   assign("thres_uniq_cat", thres_uniq_cat, .dlookrEnv)  
   assign("thres_uniq_num", thres_uniq_num, .dlookrEnv) 
   assign("sample_percent", sample_percent, .dlookrEnv)  
