@@ -752,9 +752,9 @@ html_optimal_binning <- function(.data, target, base_family = NULL) {
   } else if (length(numlist) == 0) {
     html_cat("There are no numerical variables.")
   } else {
-    n_levles <- length(table(pull(.data, target)))
+    n_levels <- length(table(pull(.data, target)))
     
-    if (n_levles != 2) {
+    if (n_levels != 2) {
       html_cat("The target variable is not a binary class.")
     } else {
       tab_numerical <- .data %>% 
@@ -1367,9 +1367,9 @@ html_paged_optimal_binning <- function(.data, target, full_width = TRUE,
     html_cat("There are no numerical variables.")
     break_page_asis()
   } else {
-    n_levles <- length(table(pull(.data, target)))
+    n_levels <- length(table(pull(.data, target)))
     
-    if (n_levles != 2) {
+    if (n_levels != 2) {
       html_cat("The target variable is not a binary class.")
       break_page_asis()
     } else {

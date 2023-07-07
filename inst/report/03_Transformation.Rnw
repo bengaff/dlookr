@@ -448,9 +448,9 @@ This work uses the recursive partitioning technique known as supervised discreti
 
 <<optimal, tidy=TRUE, echo=FALSE, warning=FALSE, message=FALSE, comment="", tidy.opts=list(width.cutoff=65), size="small", fig.height=4, fig.width=8, fig.align='center', fig.pos="!ht", results='asis'>>=
 if (!is.null(targetVariable)) {
-  n_levles <- length(table(pull(edaData, targetVariable)))
+  n_levels <- length(table(pull(edaData, targetVariable)))
 
-  if (n_levles == 2) {
+  if (n_levels == 2) {
     # Optimal Binning for Scoring Modeling
     results <- lapply(varname, function(x)
       binning_by(.data = edaData, y = targetVariable, x = x, p = 0.05))

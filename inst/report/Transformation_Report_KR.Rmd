@@ -380,9 +380,9 @@ optimal binning 작업에서는 수치형 데이터를 범주형 데이터로 �
 
 ```{r optimal, echo=FALSE, warning=FALSE, message=FALSE, comment="", fig.height=6, fig.width=7, results='asis'}
 if (!is.null(targetVariable)) {
-  n_levles <- length(table(pull(edaData, targetVariable)))
+  n_levels <- length(table(pull(edaData, targetVariable)))
 
-  if (n_levles == 2) {
+  if (n_levels == 2) {
     # Optimal Binning for Scoring Modeling
     results <- lapply(var_numeric, function(x)
       binning_by(.data = edaData, y = targetVariable, x = x, p = 0.05))
