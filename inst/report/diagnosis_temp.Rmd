@@ -555,7 +555,7 @@ h2("List of Missing Values", id = "ID-h2-missing-value", class = "title-h2")
 ```
 
 ```{r missing-data, comment="", results='asis'}
-html_missing(diagn_na_unique)
+html_missing(diagn_na_unique, var_descs = var_descs)
 
 break_line_asis(1)
 ```

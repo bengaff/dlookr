@@ -261,7 +261,8 @@ html_variable <- function(.data, var_descs = names(.data),
   # Update variables field to include Description for tooltip 
   # (and keep copy of tabs$variables)
   tabsVarsClean <- tabs$variables
-  tabs$variables <- paste0(tabs$variables, "|", var_descs)
+  varDescUsed <- names(var_descs[na.omit(match(var_descs, tabsVarsClean))])
+  tabs$variables <- paste0(tabs$variables, "|", varDescUsed)
   
   reactable(
     tabs,
@@ -517,9 +518,10 @@ html_paged_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
 #' @import dplyr
 #' @import htmltools
 #' @import reactable
-html_missing <- function(tab, grade = c("Good" = 0.05, "OK" = 0.1, 
-                                        "NotBad" = 0.2, "Bad" = 0.5, 
-                                        "Remove" = 1),
+html_missing <- function(tab, var_descs = names(.data),
+                         grade = c("Good" = 0.05, "OK" = 0.1, 
+                                   "NotBad" = 0.2, "Bad" = 0.5, 
+                                   "Remove" = 1),
                          recommend = c("Delete or Imputation", 
                                        "Delete or Imputation",
                                        "Model based Imputation", 
@@ -550,13 +552,21 @@ html_missing <- function(tab, grade = c("Good" = 0.05, "OK" = 0.1,
       ))
     }
     
+    # Update variables field to include Description for tooltip 
+    # (and keep copy of diagn_missing$variables)
+    varsClean <- diagn_missing$variables
+    varDescUsed <- names(var_descs[na.omit(match(var_descs, varsClean))])
+    diagn_missing$variables <- paste0(diagn_missing$variables, "|", varDescUsed)
+    
     # c("#D9EF8B", "#FEE08B", "#FDAE61", "#F46D43", "#D73027")  
     reactable(
       diagn_missing,
       defaultColDef = colDef(style = "font-size: 14px;color: hsl(0, 0%, 40%);"),
       filterable = TRUE,
       columns = list(
-        variables = colDef(name = "Variables"),  
+        variables = colDef(
+          cell = function(value) with_tooltip(value),
+          name = "Variables"),  
         missing_count = colDef(name = "Missing",
                                width = 120,
                                format = colFormat(separators = TRUE)),    

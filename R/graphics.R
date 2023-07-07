@@ -69,11 +69,13 @@ plot_message <- function(msg = NULL, cex = 1) {
 with_tooltip <- function(value, ...) {
   # Strip valueText and tooltipText from value
   valueText <- strsplit(value, split = "\\|")[[1]][1]
-  tooltipText <- strsplit(value, split = "\\|")[[1]][2]
+  # tooltipText <- strsplit(value, split = "\\|")[[1]][2]
+  tooltipText <- paste0(
+    "<strong>", strsplit(value, split = "\\|")[[1]][2], "</strong>")
   
   div(style = "text-decoration: underline; text-decoration-style: dotted; cursor: help",
-      tippy::tippy(valueText, tooltipText, placement = "right",
-                   theme = "light", ...))
+      tippy::tippy(valueText, tooltipText, placement = "right", 
+                   size = "large", theme = "light", ...))
 }
 
 
