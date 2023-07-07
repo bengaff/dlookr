@@ -309,6 +309,9 @@ html_variable <- function(.data, var_descs = names(.data),
       )
     ),
     details = function(index) {
+      # Reset variables field in raws table
+      raws$variables <- strsplit(raws$variables, split = "\\|")[[1]][1]
+      
       variable <- tabs$variables[index]
       type <- tabs$types[index]
       
