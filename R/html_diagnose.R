@@ -240,9 +240,6 @@ html_variable <- function(.data, var_descs = names(.data),
              outlier_count = NA)
   }
   
-  # Update variables field to include Description for tooltip
-  raws$variables <- paste0(raws$variables, "|", var_descs)
-  
   # Create tabs data
   tabs <- raws %>% 
     mutate(missing = ifelse(missing_count > 0, 1, 0)) %>% 
@@ -260,6 +257,11 @@ html_variable <- function(.data, var_descs = names(.data),
     mutate(minus = ifelse(minus_count > 0, 1, 0)) %>% 
     mutate(outlier = ifelse(outlier_count > 0, 1, 0)) %>% 
     select(variables, types, missing:outlier)
+  
+  # Update variables field to include Description for tooltip 
+  # (and keep copy of tabs$variables)
+  tabsVarsClean <- tabs$variables
+  tabs$variables <- paste0(tabs$variables, "|", var_descs)
   
   reactable(
     tabs,
@@ -312,7 +314,7 @@ html_variable <- function(.data, var_descs = names(.data),
       # Reset variables field in raws table
       raws$variables <- strsplit(raws$variables, split = "\\|")[[1]][1]
       
-      variable <- tabs$variables[index]
+      variable <- tabsVarsClean[index]
       type <- tabs$types[index]
       
       suppressWarnings(
