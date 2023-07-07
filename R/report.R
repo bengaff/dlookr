@@ -154,7 +154,7 @@ diagnose_web_report.data.frame <- function(
     varDesc = var_descs)
   
   assign("reportData", as.data.frame(.data), .dlookrEnv)
-  assign("var_descs", varDescClean, .dlookrEnv)  
+  assign("var_descs", varDescsDat, .dlookrEnv)  
   assign("thres_uniq_cat", thres_uniq_cat, .dlookrEnv)  
   assign("thres_uniq_num", thres_uniq_num, .dlookrEnv) 
   assign("sample_percent", sample_percent, .dlookrEnv)  
