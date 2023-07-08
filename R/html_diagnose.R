@@ -266,7 +266,8 @@ html_variable <- function(
   tabsVarsClean <- tabs$variables
   tabs <- tabs %>% 
     left_join(var_descs, by = "variables") %>%
-    mutate(variables = paste0(variables, "|", varDesc))
+    mutate(variables = paste0(variables, "|", varDesc)) %>% 
+    select(-varDesc)
   
   reactable(
     tabs,
@@ -562,6 +563,8 @@ html_missing <- function(
     varsClean <- diagn_missing$variables
     diagn_missing <- diagn_missing %>% 
       left_join(var_descs, by = "variables") %>%
+      mutate(variables = paste0(variables, "|", varDesc)) %>% 
+      select(-varDesc)
     
     # c("#D9EF8B", "#FEE08B", "#FDAE61", "#F46D43", "#D73027")  
     reactable(

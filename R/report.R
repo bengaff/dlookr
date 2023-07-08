@@ -76,7 +76,7 @@ eda_paged_report <- function(.data, ...) {
 #' @seealso \code{\link{diagnose_web_report.tbl_dbi}}.
 #'
 #' @param .data a data.frame or a \code{\link{tbl_df}}.
-#' @param var_descs a \code{vector} where the values are the column names in \code{.data} and the names are the descriptions for the columns.
+#' @param var_descs a \code{tibble} with columns for \code{variables} (column names in \code{.data}) and \code{varDesc} (the descriptions for the columns).
 #' @param output_file name of generated file. default is NULL.
 #' @param output_dir name of directory to generate report file. default is tempdir().
 #' @param browse logical. choose whether to output the report results to the browser.
