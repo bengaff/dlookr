@@ -146,15 +146,8 @@ diagnose_web_report.data.frame <- function(
     stop("sample_percent must be a value between (0, 100].")
   }
   
-  if (length(var_descs) != length(names(.data))) {
-    stop("var_descs must be the same length as the number of variables in the data.")
-  }
-  varDescsDat <- tibble(
-    variables = names(as.data.frame(.data)), 
-    varDesc = var_descs)
-  
   assign("reportData", as.data.frame(.data), .dlookrEnv)
-  assign("var_descs", varDescsDat, .dlookrEnv)  
+  assign("var_descs", var_descs, .dlookrEnv)  
   assign("thres_uniq_cat", thres_uniq_cat, .dlookrEnv)  
   assign("thres_uniq_num", thres_uniq_num, .dlookrEnv) 
   assign("sample_percent", sample_percent, .dlookrEnv)  

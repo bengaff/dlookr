@@ -523,9 +523,7 @@ html_paged_variable <- function(.data, thres_uniq_cat = 0.5, thres_uniq_num = 5,
 #' @import htmltools
 #' @import reactable
 html_missing <- function(
-    tab, var_descs = tibble(
-      variables = names(.data), 
-      varDesc = names(.data)),
+    tab, var_descs,
     grade = c("Good" = 0.05, "OK" = 0.1, 
               "NotBad" = 0.2, "Bad" = 0.5, 
               "Remove" = 1),
