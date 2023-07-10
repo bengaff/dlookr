@@ -649,7 +649,7 @@ html_paged_missing <- function(tab, grade = c("Good" = 0.05, "OK" = 0.1,
 #' @import dplyr
 #' @import htmltools
 html_outlier <- function(.data, theme = c("orange", "blue")[1],
-                         base_family = NULL) {
+                         base_family = NULL, var_descs) {
   style <- ifelse(theme == "orange", "color: rgb(255, 127, 42)", 
                   "color: rgb(0, 114, 188)")
   
@@ -701,14 +701,22 @@ html_outlier <- function(.data, theme = c("orange", "blue")[1],
   tabs <- list_outlier %>% 
     left_join(out_position, by = "variables")
   
+  # Update variables field to include Description for tooltip 
+  # (and keep copy of tabs$variables)
+  varsClean <- tabs$variables
+  tabs <- tabs %>% 
+    left_join(var_descs, by = "variables") %>%
+    mutate(variables = paste0(variables, "|", varDesc)) %>% 
+    select(-varDesc)
+  
   tabs %>% 
     reactable(
       defaultColDef = colDef(style = "font-size: 14px;color: hsl(0, 0%, 40%);"),
       filterable = TRUE,
       columns = list(
         variables = colDef(
-          name = "Variables"
-        ),
+          cell = function(value) with_tooltip(value),
+          name = "Variables"),
         min = colDef(
           name = "Min"
         ),  
@@ -724,7 +732,7 @@ html_outlier <- function(.data, theme = c("orange", "blue")[1],
         )    
       ),
       details = function(index) {
-        variable <- tabs$variables[index]
+        variable <- varsClean[index]
         
         diagn_outlier <- .data %>%
           diagnose_outlier(variable)
@@ -782,7 +790,7 @@ html_outlier <- function(.data, theme = c("orange", "blue")[1],
 #' @import dplyr
 #' @import htmltools
 #' @import reactable
-html_unique_cat <- function(tab, thres) {
+html_unique_cat <- function(tab, thres, var_descs) {
   diagn_uniq_cat <- tab %>%
     filter(types %in% c("character", "factor", "ordered", "Date", "POSIXct")) %>%
     filter(unique_rate >= thres | unique_count == 1) %>%
@@ -803,11 +811,22 @@ html_unique_cat <- function(tab, thres) {
                    thres) 
     html_cat(cap)
     
+    # Update variables field to include Description for tooltip 
+    # (and keep copy of diagn_uniq_cat$variables)
+    varsClean <- diagn_uniq_cat$variables
+    diagn_uniq_cat <- diagn_uniq_cat %>% 
+      left_join(var_descs, by = "variables") %>%
+      mutate(variables = paste0(variables, "|", varDesc)) %>% 
+      select(-varDesc)
+    
     reactable(
       diagn_uniq_cat,
       defaultColDef = colDef(style = "font-size: 14px;color: hsl(0, 0%, 40%);"),
       filterable = TRUE,
       columns = list(
+        variables = colDef(
+          cell = function(value) with_tooltip(value),
+          name = "Variables"), 
         unique_count = colDef(
           name = "unique",
           width = 120,
@@ -877,7 +896,7 @@ html_paged_unique_cat <- function(tab, thres, n_rows = 25, add_row = 3, caption 
 #' @import dplyr
 #' @import htmltools
 #' @import reactable
-html_unique_num <- function(tab, thres) {
+html_unique_num <- function(tab, thres, var_descs) {
   diagn_uniq_num <- tab %>%
     filter(types %in% c("numeric", "integer")) %>%
     filter(unique_count <= thres) %>%
@@ -890,6 +909,14 @@ html_unique_num <- function(tab, thres) {
       status %in% "identifier" ~ "Use as ID",
       status %in% c("low cardinality") ~ "Judgment"
     ))
+  
+  # Update variables field to include Description for tooltip 
+  # (and keep copy of diagn_uniq_num$variables)
+  varsClean <- diagn_uniq_num$variables
+  diagn_uniq_num <- diagn_uniq_num %>% 
+    left_join(var_descs, by = "variables") %>%
+    mutate(variables = paste0(variables, "|", varDesc)) %>% 
+    select(-varDesc)
   
   if (NROW(diagn_uniq_num) > 0) {
     cap <- sprintf("Variables where the unique cases is less than %s or unique is 1.",
@@ -918,6 +945,9 @@ html_unique_num <- function(tab, thres) {
       diagn_uniq_num, 
       filterable = TRUE,
       columns = list(
+        variables = colDef(
+          cell = function(value) with_tooltip(value),
+          name = "Variables"), 
         unique_count = colDef(
           name = "unique",
           width = 120,
