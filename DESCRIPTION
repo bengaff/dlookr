@@ -28,7 +28,7 @@ Imports:
     ggplot2 (>= 3.0.0),
     grid,
     gridExtra,
-    plotly(),
+    plotly,
     hrbrthemes (>= 0.8.0),
     htmltools,
     kableExtra,
