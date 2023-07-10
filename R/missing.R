@@ -577,13 +577,13 @@ plot_na_intersect <- function (x, only_na = TRUE, n_intersacts = NULL,
             axis.title.x = element_text(color = "transparent"))
   }
   
-  # suppressWarnings(gridExtra::grid.arrange(top, blank, body, right,
-  #              ncol = 2, nrow = 2, widths = c(9, 2), heights = c(1, 5),
-  #              top = main))
-  # Try using ggplotly
-  suppressWarnings(plotly::subplot(
-    plotly::ggplotly(top), plotly::ggplotly(blank), 
-    plotly::ggplotly(body), plotly::ggplotly(right),
-    nrows = 2, widths = c(0.82, 0.18), 
-    heights = c(0.17, 0.83)))
+  # Try using ggplotly - does work, but formatting not okay so leave for now
+  # suppressWarnings(plotly::subplot(
+  #   plotly::ggplotly(top), plotly::ggplotly(blank), 
+  #   plotly::ggplotly(body), plotly::ggplotly(right),
+  #   nrows = 2, widths = c(0.82, 0.18), 
+  #   heights = c(0.17, 0.83)))
+  suppressWarnings(gridExtra::grid.arrange(top, blank, body, right,
+               ncol = 2, nrow = 2, widths = c(9, 2), heights = c(1, 5),
+               top = main))
 } 
